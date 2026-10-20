@@ -1,0 +1,38 @@
+<h1>Sezai karakoç okul kütüphanesi</h1>
+
+{% if user.is_authenticated %}
+    <p>Hoş geldin, {{ user.username }}!</p>
+
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Çıkış yap</button>
+    </form>
+{% else %}
+    <a href="{% url 'login' %}">Giriş yap</a>
+    <a href="{% url 'signup' %}">Kayıt ol</a>
+{% endif %}
+
+<ul>
+    {% for book in books %}
+        <div>
+            <li>{{book.name}} - {{book.author}}</li>
+
+            {% if book.borrowed %}
+                <span>Ödünçte</span> <!--make this red in css -->
+            {% elif user.is_authenticated %}
+                <form
+                    method="POST"
+                    action="{% url 'borrow_book' book.id %}"
+                >
+                    {%csrf_token%}
+                    <button type="submit">Ödünç al!</button>
+                </form>
+
+            {% else  %}
+                <a href="{%url 'login'%}">Ödünç almak için giriş yap.</a>
+            {% endif %}
+        </div>
+    {% empty %}
+        <li>Henüz kitabımız bulunmuyor.</li>
+    {% endfor %}
+</ul>
