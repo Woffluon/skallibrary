@@ -28,7 +28,7 @@ def borrow_book(req, book_id):
 def return_book(req, book_id):
     book = get_object_or_404(Book, id=book_id)
     book.borrowed_by = None
-    book.save
+    book.save()
 
     return redirect('book_list')
 
