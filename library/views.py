@@ -18,11 +18,20 @@ def book_list(req):
 def borrow_book(req, book_id):
     book = get_object_or_404(Book, id=book_id)
 
-    if not book.borrowed:
-        book.borrowed = True
-        book.save(update_fields=["borrowed"])
+    book.borrowed_by = req.user
+    book.save()
 
     return redirect('book_list')
+
+@login_required
+@require_POST
+def return_book(req, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    book.borrowed_by = None
+    book.save
+
+    return redirect('book_list')
+
 
 def signup(req):
     if req.user.is_authenticated:
