@@ -1,22 +1,39 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-	<meta charset="UTF-8">
-	<title>Öğrenci kaydı</title>
-</head>
-<body>
-    <h1>Kütüphaneye kaydol</h1>
+{% extends "library/base.html" %}
 
-    <form method="post">
-        {%csrf_token%}
-        {{form.as_p}}
+{% block title %}Kayıt Ol | SKAL Kütüphanesi{% endblock %}
 
-        <button type="submit">Kaydol</button>
-    </form>
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Öğrenci Kaydı</h1>
+            <p class="auth-subtitle">Kitap ödünç almak ve işlem yapmak için hesap oluşturun</p>
+        </div>
 
-    <p>
-        zaten hesabın var mı?
-        <a href="{%url 'login'%}">Giriş yap</a>
-    </p>
-</body>
-</html>
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <ul class="errorlist">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {{ form.as_p }}
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1.25rem;">
+                Kayıt Ol
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>
+                Zaten bir hesabınız var mı?
+                <a href="{% url 'login' %}">Giriş Yapın</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

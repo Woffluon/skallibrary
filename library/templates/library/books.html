@@ -1,38 +1,89 @@
-<h1>Sezai karakoç okul kütüphanesi</h1>
+{% extends "library/base.html" %}
 
-{% if user.is_authenticated %}
-    <p>Hoş geldin, {{ user.username }}!</p>
+{% block title %}Kitap Kataloğu | SKAL Kütüphanesi{% endblock %}
 
-    <form method="post" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit">Çıkış yap</button>
-    </form>
-{% else %}
-    <a href="{% url 'login' %}">Giriş yap</a>
-    <a href="{% url 'signup' %}">Kayıt ol</a>
-{% endif %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Kitap Kataloğu</h1>
+    <p class="page-subtitle">Kütüphanemizde kayıtlı tüm kitaplar ve anlık ödünç durumları.</p>
 
-<ul>
+    {% if not user.is_authenticated %}
+        <div class="notice-banner">
+            <span>Kitap ödünç almak veya iade etmek için sisteme giriş yapmalısınız.</span>
+            <div>
+                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Giriş Yap</a>
+                <a href="{% url 'signup' %}" class="btn btn-outline btn-sm">Kayıt Ol</a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<div class="catalog-controls">
+    <div class="search-wrapper">
+        <input
+            type="text"
+            id="bookSearch"
+            class="search-input"
+            placeholder="Kitap adı veya yazar ara..."
+            autocomplete="off"
+            aria-label="Kitap veya yazar ara"
+        >
+    </div>
+    <span class="books-count" id="booksCount">Toplam {{ books|length }} kitap</span>
+</div>
+
+<div class="books-grid" id="booksGrid">
     {% for book in books %}
-        <div>
-            <li>{{book.name}} - {{book.author}}</li>
+        <div class="book-card" data-name="{{ book.name }}" data-author="{{ book.author }}">
+            <div class="book-card-top">
+                <div class="book-status-wrap">
+                    {% if book.borrowed %}
+                        {% if user.is_authenticated and book.borrowed_by == user %}
+                            <span class="badge badge-user">Sizde</span>
+                        {% else %}
+                            <span class="badge badge-borrowed">Ödünçte</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge badge-available">Müsait</span>
+                    {% endif %}
+                </div>
+            </div>
 
-            {% if book.borrowed %}
-                <span>Ödünçte</span> <!--make this red in css -->
-            {% elif user.is_authenticated %}
-                <form
-                    method="POST"
-                    action="{% url 'borrow_book' book.id %}"
-                >
-                    {%csrf_token%}
-                    <button type="submit">Ödünç al!</button>
-                </form>
+            <div class="book-card-body">
+                <h2 class="book-name">{{ book.name }}</h2>
+                <p class="book-author">{{ book.author }}</p>
+            </div>
 
-            {% else  %}
-                <a href="{%url 'login'%}">Ödünç almak için giriş yap.</a>
-            {% endif %}
+            <div class="book-card-footer">
+                {% if book.borrowed %}
+                    {% if user.is_authenticated and book.borrowed_by == user %}
+                        <form method="POST" action="{% url 'return_book' book.id %}" class="action-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning btn-block">İade Et</button>
+                        </form>
+                    {% else %}
+                        <button type="button" class="btn btn-disabled btn-block" disabled>Ödünç Verildi</button>
+                    {% endif %}
+                {% elif user.is_authenticated %}
+                    <form method="POST" action="{% url 'borrow_book' book.id %}" class="action-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-block">Ödünç Al</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline btn-block">Ödünç Almak İçin Giriş Yap</a>
+                {% endif %}
+            </div>
         </div>
     {% empty %}
-        <li>Henüz kitabımız bulunmuyor.</li>
+        <div class="empty-state">
+            <h3 class="empty-state-title">Henüz kitap bulunmuyor</h3>
+            <p class="empty-state-desc">Kütüphane arşivine henüz kitap eklenmemiştir.</p>
+        </div>
     {% endfor %}
-</ul>
+
+    <div id="noSearchResults" class="empty-state" style="display: none;">
+        <h3 class="empty-state-title">Sonuç Bulunamadı</h3>
+        <p class="empty-state-desc">Arama kriterlerinize uygun kitap bulunamadı.</p>
+    </div>
+</div>
+{% endblock %}
