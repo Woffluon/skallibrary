@@ -28,7 +28,7 @@ class Book(models.Model):
     # we use this one so we don't need the borrowed boolean field
     @property
     def borrowed(self):
-        return self.borrowed is not None
+        return self.borrowed_by is not None
 
     def __str__(self):
         return f"{self.name} - {self.author}"

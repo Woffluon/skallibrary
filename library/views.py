@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate,login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
+from django.contrib.auth.forms import UserCreationForm
 
 from library.models import Book
 
@@ -49,7 +50,7 @@ def signup(req):
 
     return render(
         req,
-        "registiration/signup.html",
+        "library/signup.html",
         {"form":form}
     )
 
