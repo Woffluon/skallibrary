@@ -1,4 +1,4 @@
-"""Kullanim: python scripts/migrate_to_neon.py [--url postgresql://...] [--skip-data]"""
+"""Kullanim: python database.py [--url postgresql://...] [--skip-data]"""
 import argparse
 import getpass
 import os
@@ -44,6 +44,23 @@ def main():
                 "-e", "contenttypes", "-e", "auth.Permission",
                 "--indent", "2", "-o", str(DUMP),
             ], base)
+
+        # bigint kalinti library_book tablosunu temizle
+        try:
+            import psycopg
+            with psycopg.connect(direct) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT data_type FROM information_schema.columns 
+                        WHERE table_name = 'library_book' AND column_name = 'id';
+                    """)
+                    row = cur.fetchone()
+                    if row and row[0] == 'bigint':
+                        print("==> Eski bigint 'library_book' tablosu tespit edildi, UUID icin sifirlaniyor...")
+                        cur.execute("DROP TABLE IF EXISTS library_book CASCADE;")
+                        cur.execute("DELETE FROM django_migrations WHERE app = 'library';")
+        except Exception as e:
+            print(f"Uyari: Tablo kontrolu atlandi ({e})")
 
         run("Neon migrate", ["manage.py", "migrate", "--noinput"], neon)
 
