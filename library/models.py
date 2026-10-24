@@ -1,5 +1,6 @@
 import uuid
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -39,6 +40,54 @@ class Book(models.Model):
     class Meta:
         verbose_name = "Kitap"
         verbose_name_plural = "Kitaplar"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(status__in=['pending', 'approved', 'return_pending']) & models.Q(borrowed_by__isnull=False)) |
+                    (models.Q(status__in=['returned', 'denied']) & models.Q(borrowed_by__isnull=True))
+                ),
+                name="book_status_borrower_consistency"
+            )
+        ]
+
+    def request_borrow(self, user):
+        """Öğrencinin ödünç alma talebini kaydeder."""
+        if self.status in ['pending', 'approved', 'return_pending'] or self.borrowed_by is not None:
+            raise ValidationError("Bu kitap şu anda ödünç alınamaz.")
+        self.status = 'pending'
+        self.borrowed_by = user
+
+    def approve_borrow(self):
+        """Yöneticinin ödünç alma talebini onaylamasını sağlar."""
+        if self.status != 'pending':
+            raise ValidationError("Yalnızca onay bekleyen ödünç talepleri onaylanabilir.")
+        self.status = 'approved'
+
+    def deny_borrow(self):
+        """Yöneticinin ödünç alma talebini reddetmesini sağlar."""
+        if self.status != 'pending':
+            raise ValidationError("Yalnızca onay bekleyen ödünç talepleri reddedilebilir.")
+        self.status = 'denied'
+        self.borrowed_by = None
+
+    def request_return(self, user):
+        """Öğrencinin ödünç aldığı kitap için iade talebi başlatmasını sağlar."""
+        if self.borrowed_by != user or self.status != 'approved':
+            raise ValidationError("Bu kitap için iade işlemi başlatamazsınız.")
+        self.status = 'return_pending'
+
+    def confirm_return(self):
+        """Yöneticinin iade talebini onaylamasını sağlar."""
+        if self.status != 'return_pending':
+            raise ValidationError("Yalnızca iade onayı bekleyen kitapların iadesi onaylanabilir.")
+        self.status = 'returned'
+        self.borrowed_by = None
+
+    def deny_return(self):
+        """Yöneticinin iade talebini reddetmesini sağlar."""
+        if self.status != 'return_pending':
+            raise ValidationError("Yalnızca iade onayı bekleyen kitapların iade talebi reddedilebilir.")
+        self.status = 'approved'
 
     @property
     def borrowed(self):

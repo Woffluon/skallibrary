@@ -1,6 +1,11 @@
 import io
 from PIL import Image
+import importlib
+import os
+from unittest.mock import patch
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.db import IntegrityError, transaction
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -159,3 +164,149 @@ class BorrowReturnFlowTests(TestCase):
         finally:
             if book_with_cover.cover:
                 book_with_cover.cover.delete(save=False)
+
+
+class BookModelIntegrityAndSecurityTests(TestCase):
+    """
+    - Model durum makinesi metotları (request_borrow, approve_borrow, deny_borrow, request_return, confirm_return, deny_return)
+    - Geçersiz durum geçişlerinde ValidationError fırlatılması
+    - Veritabanı CheckConstraint ile durum ve borrowed_by tutarsızlığında IntegrityError fırlatılması
+    - DEBUG=False ve DJANGO_SECRET_KEY='' yapılandırmasında ImproperlyConfigured fırlatılması
+    """
+
+    def setUp(self):
+        self.student = User.objects.create_user(username='ogrenci1', password='parola123')
+        self.other_student = User.objects.create_user(username='ogrenci2', password='parola123')
+        self.book = Book.objects.create(name='Kuyucaklı Yusuf', author='Sabahattin Ali')
+
+    def test_model_valid_state_transitions(self):
+        """
+        Model durum geçiş metotlarının standart mutlu yol (happy path) akış testi:
+        request_borrow -> approve_borrow -> request_return -> confirm_return
+        """
+        # 1. Ödünç talebi oluşturma (returned -> pending)
+        self.book.request_borrow(self.student)
+        self.assertEqual(self.book.status, 'pending')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+        # 2. Yönetici ödünç onaylama (pending -> approved)
+        self.book.approve_borrow()
+        self.assertEqual(self.book.status, 'approved')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+        # 3. Öğrenci iade talebi oluşturma (approved -> return_pending)
+        self.book.request_return(self.student)
+        self.assertEqual(self.book.status, 'return_pending')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+        # 4. Yönetici iade onaylama (return_pending -> returned)
+        self.book.confirm_return()
+        self.assertEqual(self.book.status, 'returned')
+        self.assertIsNone(self.book.borrowed_by)
+
+    def test_model_deny_transitions(self):
+        """
+        Model ret durum geçişlerinin testi:
+        - deny_borrow (pending -> denied, borrowed_by sıfırlanır)
+        - deny_return (return_pending -> approved, borrowed_by korunur)
+        """
+        # 1. Ödünç talebini reddetme
+        self.book.request_borrow(self.student)
+        self.book.deny_borrow()
+        self.assertEqual(self.book.status, 'denied')
+        self.assertIsNone(self.book.borrowed_by)
+
+        # Reddedilmiş kitap tekrar ödünç talep edilebilir ve onaylanabilir
+        self.book.request_borrow(self.student)
+        self.book.approve_borrow()
+
+        # 2. İade talebini reddetme
+        self.book.request_return(self.student)
+        self.book.deny_return()
+        self.assertEqual(self.book.status, 'approved')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+    def test_invalid_state_transitions_raise_validation_error(self):
+        """
+        Geçersiz durum geçişlerinde django.core.exceptions.ValidationError fırlatıldığının testi.
+        """
+        # 1. Kitap zaten pending durumundayken tekrar ödünç talebinde bulunulamaz
+        self.book.status = 'pending'
+        self.book.borrowed_by = self.student
+        self.book.save()
+        with self.assertRaises(ValidationError):
+            self.book.request_borrow(self.other_student)
+
+        # 2. Kitap approved durumundayken yeni ödünç talebinde bulunulamaz
+        self.book.status = 'approved'
+        self.book.save()
+        with self.assertRaises(ValidationError):
+            self.book.request_borrow(self.student)
+
+        # 3. Kitabı ödünç almamış farklı bir öğrenci iade talebi iletemez
+        with self.assertRaises(ValidationError):
+            self.book.request_return(self.other_student)
+
+        # 4. pending durumunda olmayan kitap için approve_borrow çağrılamaz
+        self.book.status = 'returned'
+        self.book.borrowed_by = None
+        self.book.save()
+        with self.assertRaises(ValidationError):
+            self.book.approve_borrow()
+
+        # 5. pending durumunda olmayan kitap için deny_borrow çağrılamaz
+        with self.assertRaises(ValidationError):
+            self.book.deny_borrow()
+
+        # 6. return_pending durumunda olmayan kitap için confirm_return çağrılamaz
+        with self.assertRaises(ValidationError):
+            self.book.confirm_return()
+
+        # 7. return_pending durumunda olmayan kitap için deny_return çağrılamaz
+        with self.assertRaises(ValidationError):
+            self.book.deny_return()
+
+    def test_state_and_borrower_consistency_integrity_error(self):
+        """
+        Durum ve borrowed_by tutarsızlığında veritabanı CheckConstraint kaynaklı
+        django.db.IntegrityError fırlatıldığının testi.
+        """
+        # 1. 'returned' durumunda borrowed_by dolu olamaz
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Book.objects.create(name='Hatalı Kitap 1', author='Yazar 1', status='returned', borrowed_by=self.student)
+
+        # 2. 'denied' durumunda borrowed_by dolu olamaz
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Book.objects.create(name='Hatalı Kitap 2', author='Yazar 2', status='denied', borrowed_by=self.student)
+
+        # 3. 'approved' durumunda borrowed_by None olamaz
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Book.objects.create(name='Hatalı Kitap 3', author='Yazar 3', status='approved', borrowed_by=None)
+
+        # 4. 'pending' durumunda borrowed_by None olamaz
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Book.objects.create(name='Hatalı Kitap 4', author='Yazar 4', status='pending', borrowed_by=None)
+
+        # 5. 'return_pending' durumunda borrowed_by None olamaz
+        with transaction.atomic():
+            with self.assertRaises(IntegrityError):
+                Book.objects.create(name='Hatalı Kitap 5', author='Yazar 5', status='return_pending', borrowed_by=None)
+
+    def test_production_secret_key_required_when_debug_false(self):
+        """
+        DEBUG=False ve DJANGO_SECRET_KEY="" olduğunda
+        django.core.exceptions.ImproperlyConfigured fırlatıldığının testi.
+        """
+        import config.settings
+
+        try:
+            with patch.dict(os.environ, {"DJANGO_DEBUG": "False", "DJANGO_SECRET_KEY": ""}):
+                with self.assertRaises(ImproperlyConfigured):
+                    importlib.reload(config.settings)
+        finally:
+            # Test ortamının ayarlarını orijinal haline geri yükle
+            importlib.reload(config.settings)
