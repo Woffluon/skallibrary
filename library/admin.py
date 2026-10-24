@@ -1,9 +1,26 @@
 from django.contrib import admin
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group, User
+from unfold.admin import ModelAdmin
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+
 from library.models import Book
 
-admin.site.site_header = "SKAL Kütüphanesi Yönetim Paneli"
-admin.site.site_title = "SKAL Kütüphanesi Yönetimi"
-admin.site.index_title = "Kütüphane Yönetim Paneli"
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
+
+@admin.register(Group)
+class GroupAdmin(BaseGroupAdmin, ModelAdmin):
+    pass
 
 
 @admin.action(description="Ödünç talebini onayla")
@@ -30,11 +47,9 @@ def deny_return(modeladmin, request, queryset):
     modeladmin.message_user(request, f"{count} adet kitabın iade talebi reddedildi.")
 
 
-class BookAdmin(admin.ModelAdmin):
+@admin.register(Book)
+class BookAdmin(ModelAdmin):
     list_display = ('name', 'author', 'status', 'borrowed_by', 'cover')
     list_filter = ('status',)
     search_fields = ('name', 'author')
     actions = [approve_borrow, deny_borrow, confirm_return, deny_return]
-
-
-admin.site.register(Book, BookAdmin)

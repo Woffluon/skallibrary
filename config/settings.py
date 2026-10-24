@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -135,4 +136,11 @@ MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
+}
+
+# Unfold Theme Settings
+UNFOLD = {
+    "SITE_TITLE": "SKAL Kütüphanesi Yönetimi",
+    "SITE_HEADER": "SKAL Kütüphanesi",
+    "SITE_URL": "/",
 }
