@@ -34,16 +34,42 @@
 <div class="books-grid" id="booksGrid">
     {% for book in books %}
         <div class="book-card" data-name="{{ book.name }}" data-author="{{ book.author }}">
+            <div class="book-cover-container">
+                {% if book.cover %}
+                    <img src="{{ book.cover.url }}" alt="{{ book.name }}" class="book-cover">
+                {% else %}
+                    <div class="book-cover-placeholder" aria-label="Kapak resmi yok">
+                        <span class="placeholder-icon">📖</span>
+                    </div>
+                {% endif %}
+            </div>
+
             <div class="book-card-top">
                 <div class="book-status-wrap">
-                    {% if book.borrowed %}
-                        {% if user.is_authenticated and book.borrowed_by == user %}
-                            <span class="badge badge-user">Sizde</span>
+                    {% if not user.is_authenticated %}
+                        {% if book.is_available %}
+                            <span class="badge badge-available">Müsait</span>
                         {% else %}
                             <span class="badge badge-borrowed">Ödünçte</span>
                         {% endif %}
                     {% else %}
-                        <span class="badge badge-available">Müsait</span>
+                        {% if book.borrowed_by == user %}
+                            {% if book.status == 'pending' %}
+                                <span class="badge badge-user">Onay Bekliyor</span>
+                            {% elif book.status == 'approved' %}
+                                <span class="badge badge-user">Sizde</span>
+                            {% elif book.status == 'return_pending' %}
+                                <span class="badge badge-user">İade Bekleniyor</span>
+                            {% else %}
+                                <span class="badge badge-available">Müsait</span>
+                            {% endif %}
+                        {% elif book.status == 'pending' %}
+                            <span class="badge badge-borrowed">Talep Edildi</span>
+                        {% elif book.borrowed %}
+                            <span class="badge badge-borrowed">Ödünçte</span>
+                        {% else %}
+                            <span class="badge badge-available">Müsait</span>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -54,22 +80,35 @@
             </div>
 
             <div class="book-card-footer">
-                {% if book.borrowed %}
-                    {% if user.is_authenticated and book.borrowed_by == user %}
-                        <form method="POST" action="{% url 'return_book' book.id %}" class="action-form">
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'login' %}" class="btn btn-outline btn-block">Ödünç Almak İçin Giriş Yap</a>
+                {% else %}
+                    {% if book.borrowed_by == user %}
+                        {% if book.status == 'approved' %}
+                            <form method="POST" action="{% url 'return_book' book.id %}" class="action-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-block">İade Et</button>
+                            </form>
+                        {% elif book.status == 'return_pending' %}
+                            <button type="button" class="btn btn-disabled btn-block" disabled>İade Onayı Bekleniyor</button>
+                        {% elif book.status == 'pending' %}
+                            <button type="button" class="btn btn-disabled btn-block" disabled>Ödünç Onayı Bekleniyor</button>
+                        {% else %}
+                            <form method="POST" action="{% url 'borrow_book' book.id %}" class="action-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-block">Ödünç Al</button>
+                            </form>
+                        {% endif %}
+                    {% elif book.is_available %}
+                        <form method="POST" action="{% url 'borrow_book' book.id %}" class="action-form">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-warning btn-block">İade Et</button>
+                            <button type="submit" class="btn btn-primary btn-block">Ödünç Al</button>
                         </form>
+                    {% elif book.status == 'pending' %}
+                        <button type="button" class="btn btn-disabled btn-block" disabled>Talep Edildi</button>
                     {% else %}
                         <button type="button" class="btn btn-disabled btn-block" disabled>Ödünç Verildi</button>
                     {% endif %}
-                {% elif user.is_authenticated %}
-                    <form method="POST" action="{% url 'borrow_book' book.id %}" class="action-form">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-block">Ödünç Al</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-outline btn-block">Ödünç Almak İçin Giriş Yap</a>
                 {% endif %}
             </div>
         </div>
