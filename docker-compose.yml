@@ -6,10 +6,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      - DJANGO_DB_PATH=/app/data/db.sqlite3
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/app/data
       - ./media:/app/media

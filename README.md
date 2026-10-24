@@ -41,7 +41,8 @@ cp .env.example .env
 docker compose up -d
 ```
 
-- Medya dosyaları (`./media`) ve SQLite veritabanı (`./data`) ana makinede kalıcı olarak saklanır.
+- Medya dosyaları (`./media`) ana makinede kalıcı olarak saklanır.
+- Veritabanı Neon Postgres (`DATABASE_URL`) ile bağlanır; tanımlı değilse yerel SQLite kullanılır.
 - Konteyner ayağa kalktığında veritabanı geçişleri (`migrate`) otomatik uygulanır.
 
 ## Testler
