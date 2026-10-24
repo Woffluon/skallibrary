@@ -10,7 +10,8 @@ from library.models import Book
 
 
 def book_list(req):
-    books = Book.objects.all()
+    """Tüm kitapları ve ödünç alan kullanıcı ilişkisini N+1 sorununu önlemek için tek sorguda listeler."""
+    books = Book.objects.select_related('borrowed_by').all()
     return render(req, "library/books.html", {
         "books": books
     })

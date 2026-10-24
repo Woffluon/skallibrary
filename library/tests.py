@@ -310,3 +310,110 @@ class BookModelIntegrityAndSecurityTests(TestCase):
         finally:
             # Test ortamının ayarlarını orijinal haline geri yükle
             importlib.reload(config.settings)
+
+
+class BookListPerformanceAndCoverValidationTests(TestCase):
+    """
+    - Kitap listesinde N+1 sorgu problemi tespiti (sorgu sayısının sabit olması)
+    - Kapak görseli dosya boyutu sınırlaması (maksimum 2MB) doğrulaması
+    - Kapak görseli dosya uzantısı doğrulaması (güvenli görsel formatları)
+    - Veritabanı indekslerinin tanımlanmış olmasının doğrulanması (name + author bileşik indeksi ve status indeksi)
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='password123')
+        self.other_user = User.objects.create_user(username='otheruser', password='password123')
+
+    def test_book_list_query_count_constant(self):
+        """
+        10 adet ödünç verilmiş ve 5 adet müsait kitap olduğunda,
+        kitap listeleme sayfasının N+1 problemi olmadan sabit 3 sorgu ile çalışması beklenir.
+        kitap listeleme sayfasında N+1 sorgusu oluşmadığını doğrular.
+        """
+        # 10 adet ödünç verilmiş kitap oluştur
+        for i in range(10):
+            Book.objects.create(
+                name=f"Ödünç Kitap {i}",
+                author=f"Yazar {i}",
+                status='approved',
+                borrowed_by=self.other_user
+            )
+        # 5 adet ödünç verilmemiş (müsait) kitap oluştur
+        for i in range(5):
+            Book.objects.create(
+                name=f"Müsait Kitap {i}",
+                author=f"Yazar {i}",
+                status='returned',
+                borrowed_by=None
+            )
+
+        self.client.login(username='testuser', password='password123')
+
+        # Giriş yapmış kullanıcı ile kitap listeleme sayfası istendiğinde
+        # 1 session sorgusu + 1 giriş yapan auth_user sorgusu + 1 optimize edilmiş kitap sorgusu = toplam 3 sorgu olmalıdır.
+        with self.assertNumQueries(3):
+            response = self.client.get(reverse('book_list'))
+            self.assertEqual(response.status_code, 200)
+
+    def test_cover_image_size_limit_validation(self):
+        """
+        2MB'den büyük (2.5MB) kapak resmi yüklendiğinde full_clean() çağrısının
+        ValidationError fırlatması gerekir.
+        Mevcut kodda boyut sınırlama doğrulayıcısı olmadığı için FAIL etmelidir.
+        """
+        file_size_2_5_mb = int(2.5 * 1024 * 1024)
+        large_image_content = b'x' * file_size_2_5_mb
+        large_cover = SimpleUploadedFile(
+            name='large_cover.jpg',
+            content=large_image_content,
+            content_type='image/jpeg'
+        )
+
+        book = Book(
+            name='Büyük Kapaklı Kitap',
+            author='Test Yazar',
+            cover=large_cover
+        )
+
+        with self.assertRaises(ValidationError):
+            book.full_clean()
+
+    def test_cover_image_extension_validation(self):
+        """
+        Geçersiz uzantıya sahip dosya (örn. .exe veya .sh) yüklendiğinde full_clean()
+        çağrısının ValidationError fırlatması gerekir.
+        Mevcut kodda uzantı doğrulayıcısı olmadığı için FAIL etmelidir.
+        """
+        malicious_file = SimpleUploadedFile(
+            name='dangerous_script.sh',
+            content=b'#!/bin/bash\necho "test"',
+            content_type='text/x-shellscript'
+        )
+
+        book = Book(
+            name='Zararlı Dosyalı Kitap',
+            author='Test Yazar',
+            cover=malicious_file
+        )
+
+        with self.assertRaises(ValidationError):
+            book.full_clean()
+
+    def test_book_indexes_defined(self):
+        """
+        Book modeli üzerinde performans için gerekli indekslerin tanımlı olduğunu doğrular:
+        - Book._meta.indexes içinde 'book_name_author_idx' isimli indeks bulunmalı.
+        - Book._meta.get_field('status').db_index değeri True olmalı.
+        Mevcut kodda indeksler tanımlı olmadığı için FAIL etmelidir.
+        """
+        index_names = [index.name for index in Book._meta.indexes]
+        self.assertIn(
+            'book_name_author_idx',
+            index_names,
+            "Book modeli 'book_name_author_idx' bileşik indeksine sahip olmalıdır."
+        )
+        self.assertTrue(
+            Book._meta.get_field('status').db_index,
+            "'status' alanı üzerinde db_index=True tanımlanmış olmalıdır."
+        )
+

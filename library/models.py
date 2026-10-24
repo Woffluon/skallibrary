@@ -1,7 +1,15 @@
 import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+
+def validate_cover_image(value):
+    """Kapak görselinin maksimum 2MB boyutunda olmasını doğrular."""
+    limit = 2 * 1024 * 1024
+    if value.size > limit:
+        raise ValidationError("Kapak görseli maksimum 2MB boyutunda olabilir.")
 
 
 class Book(models.Model):
@@ -21,7 +29,16 @@ class Book(models.Model):
     )
     name = models.CharField(max_length=255, verbose_name="Kitap Adı")
     author = models.CharField(max_length=255, verbose_name="Yazar")
-    cover = models.ImageField(upload_to='covers/', blank=True, null=True, verbose_name="Kapak Resmi")
+    cover = models.ImageField(
+        upload_to='covers/',
+        blank=True,
+        null=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_cover_image,
+        ],
+        verbose_name="Kapak Resmi",
+    )
     borrowed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -34,12 +51,16 @@ class Book(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='returned',
+        db_index=True,
         verbose_name="Durum",
     )
 
     class Meta:
         verbose_name = "Kitap"
         verbose_name_plural = "Kitaplar"
+        indexes = [
+            models.Index(fields=['name', 'author'], name='book_name_author_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=(
