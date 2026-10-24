@@ -1,32 +1,40 @@
-/* Sezai Karakoç Anadolu Lisesi Kütüphanesi - Unfold Temalı Stil Dosyası */
+/* Sezai Karakoç Anadolu Lisesi Kütüphanesi - Sıcak Kâğıt & Koyu Yeşil Tasarım Paleti */
 
 :root {
-    --primary: #9333ea;
-    --primary-hover: #7e22ce;
-    --primary-light: #faf5ff;
-    --primary-border: #e9d5ff;
-    --secondary: #64748b;
-    --secondary-hover: #475569;
+    /* Kullanıcı Özel Tasarım Paleti */
+    --bg: #fafaf8;        /* hafif sıcak beyaz, kâğıt gibi */
     --surface: #ffffff;
-    --bg: #f8fafc;
-    --text: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --border-hover: #cbd5e1;
+    --fg: #141414;
+    --muted: #6b6b66;
+    --line: #e7e5e0;
+    --accent: #1f4d3a;    /* koyu yeşil, butonlar ve linkler */
+    --accent-hover: #163a2b;
 
-    --success: #16a34a;
-    --success-bg: #ecfdf5;
-    --success-border: #a7f3d0;
+    /* Semantik Değişken Eşleştirmeleri */
+    --text: var(--fg);
+    --text-muted: var(--muted);
+    --border: var(--line);
+    --border-hover: #d5d2cb;
+    --primary: var(--accent);
+    --primary-hover: var(--accent-hover);
+    --primary-light: #f1f6f3;
+    --primary-border: #c8dcd3;
+    --secondary: #575752;
+    --secondary-hover: #3d3d39;
 
-    --danger: #dc2626;
-    --danger-bg: #fef2f2;
+    --success: #1b5e20;
+    --success-bg: #edf7ee;
+    --success-border: #c8e6c9;
+
+    --danger: #991b1b;
+    --danger-bg: #fdf2f2;
     --danger-border: #fecaca;
 
-    --warning: #d97706;
-    --warning-bg: #fffbeb;
+    --warning: #92400e;
+    --warning-bg: #fef9ed;
     --warning-border: #fde68a;
 
-    --info: #0284c7;
+    --info: #075985;
     --info-bg: #f0f9ff;
     --info-border: #bae6fd;
 
@@ -35,10 +43,10 @@
     --radius-lg: 16px;
     --radius-full: 9999px;
 
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 1px 2px 0 rgba(20, 20, 20, 0.04);
+    --shadow: 0 1px 3px 0 rgba(20, 20, 20, 0.05), 0 1px 2px -1px rgba(20, 20, 20, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(20, 20, 20, 0.06), 0 2px 4px -2px rgba(20, 20, 20, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(20, 20, 20, 0.07), 0 4px 6px -4px rgba(20, 20, 20, 0.03);
 
     --transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -61,16 +69,17 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: var(--bg);
 }
 
 a {
-    color: var(--primary);
+    color: var(--accent);
     text-decoration: none;
     transition: var(--transition);
 }
 
 a:hover {
-    color: var(--primary-hover);
+    color: var(--accent-hover);
 }
 
 img {
@@ -115,12 +124,12 @@ img {
     width: 38px;
     height: 38px;
     border-radius: 9px;
-    background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+    background-color: var(--accent);
     color: #ffffff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(147, 51, 234, 0.25);
+    box-shadow: 0 2px 5px rgba(31, 77, 58, 0.25);
     flex-shrink: 0;
 }
 
@@ -167,12 +176,12 @@ img {
 }
 
 .nav-link:hover {
-    color: var(--primary);
+    color: var(--accent);
     background-color: var(--primary-light);
 }
 
 .nav-link-admin {
-    color: var(--primary) !important;
+    color: var(--accent) !important;
     font-weight: 600;
 }
 
@@ -182,7 +191,7 @@ img {
     gap: 0.4rem;
     padding: 0.35rem 0.85rem;
     background-color: var(--primary-light);
-    color: var(--primary);
+    color: var(--accent);
     border-radius: var(--radius-full);
     font-size: 0.825rem;
     font-weight: 600;
@@ -235,19 +244,19 @@ img {
 
 .btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.25);
+    box-shadow: 0 0 0 3px rgba(31, 77, 58, 0.2);
 }
 
 .btn-primary {
-    background-color: var(--primary);
+    background-color: var(--accent);
     color: #ffffff;
-    border-color: var(--primary);
-    box-shadow: 0 1px 2px rgba(147, 51, 234, 0.2);
+    border-color: var(--accent);
+    box-shadow: 0 1px 2px rgba(31, 77, 58, 0.2);
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-hover);
-    border-color: var(--primary-hover);
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
     color: #ffffff;
 }
 
@@ -264,33 +273,33 @@ img {
 }
 
 .btn-outline {
-    background-color: #ffffff;
+    background-color: var(--surface);
     color: var(--text);
     border-color: var(--border);
 }
 
 .btn-outline:hover {
-    background-color: var(--bg);
+    background-color: var(--primary-light);
     border-color: var(--border-hover);
-    color: var(--text);
+    color: var(--accent);
 }
 
 .btn-warning {
-    background-color: #f59e0b;
+    background-color: #d97706;
     color: #ffffff;
-    border-color: #f59e0b;
+    border-color: #d97706;
 }
 
 .btn-warning:hover {
-    background-color: #d97706;
-    border-color: #d97706;
+    background-color: #b45309;
+    border-color: #b45309;
     color: #ffffff;
 }
 
 .btn-disabled {
-    background-color: #f1f5f9;
-    color: #94a3b8;
-    border-color: #e2e8f0;
+    background-color: #f1f0ea;
+    color: #9c9a92;
+    border-color: #e7e5e0;
     cursor: not-allowed;
 }
 
@@ -337,7 +346,7 @@ img {
 
 .badge-user {
     background-color: var(--primary-light);
-    color: var(--primary);
+    color: var(--accent);
     border: 1px solid var(--primary-border);
 }
 
@@ -407,14 +416,14 @@ img {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #9333ea 0%, #c084fc 100%);
+    background: linear-gradient(90deg, #1f4d3a 0%, #3d7d63 100%);
 }
 
 .hero-tag {
     display: inline-block;
     padding: 0.35rem 0.85rem;
     background-color: var(--primary-light);
-    color: var(--primary);
+    color: var(--accent);
     border: 1px solid var(--primary-border);
     border-radius: var(--radius-full);
     font-size: 0.8rem;
@@ -487,7 +496,7 @@ img {
 /* CTA Banner */
 
 .cta-banner {
-    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    background: linear-gradient(135deg, #f7faf8 0%, #edf4f0 100%);
     border: 1px solid var(--primary-border);
     border-radius: var(--radius-lg);
     padding: 2.5rem;
@@ -539,7 +548,7 @@ img {
     border-radius: var(--radius);
     margin-top: 1rem;
     font-size: 0.925rem;
-    color: var(--primary);
+    color: var(--accent);
     flex-wrap: wrap;
     gap: 0.5rem;
 }
@@ -586,8 +595,8 @@ img {
 
 .search-input:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(31, 77, 58, 0.15);
 }
 
 .books-count {
@@ -695,7 +704,7 @@ img {
     width: 100%;
     height: 190px;
     background-color: var(--primary-light);
-    color: var(--primary);
+    color: var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -768,8 +777,8 @@ img {
 
 .auth-form input:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(31, 77, 58, 0.15);
 }
 
 .auth-footer {
@@ -822,7 +831,7 @@ img {
 }
 
 .footer-links a:hover {
-    color: var(--primary);
+    color: var(--accent);
 }
 
 /* ================= Responsive ================= */
