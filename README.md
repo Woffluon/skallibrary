@@ -32,15 +32,27 @@ python manage.py runserver
 - Katalog: `http://127.0.0.1:8000/`
 - Yönetim paneli: `http://127.0.0.1:8000/admin/`
 
+## Docker ile Çalıştırma
+
+```bash
+cp .env.example .env
+# .env dosyasındaki değişkenleri düzenleyin
+
+docker compose up -d
+```
+
+- Medya dosyaları (`./media`) ve SQLite veritabanı (`./data`) ana makinede kalıcı olarak saklanır.
+- Konteyner ayağa kalktığında veritabanı geçişleri (`migrate`) otomatik uygulanır.
+
 ## Testler
 
 ```bash
 python manage.py test
 ```
 
-## Canlı Ortam
+## Canlı Ortam Yapılandırması
 
-Canlıya çıkarken `.env.example` dosyasını `.env` olarak kopyalayıp değişkenleri tanımlayın:
+Canlıya çıkarken `.env.example` dosyasını `.env` olarak kopyalayıp üretim değişkenlerini tanımlayın:
 
 ```bash
 cp .env.example .env
@@ -48,6 +60,8 @@ python manage.py collectstatic --noinput
 ```
 
 `DJANGO_DEBUG=False` olduğunda HTTPS, HSTS, secure cookies ve WhiteNoise statik sunumu otomatik devreye girer.
+
+GitHub Actions (`.github/workflows/ci.yml`), `main` dalına gelen her push işleminde testleri çalıştırır ve Docker imajını `ghcr.io` üzerine `latest` etiketiyle yükler.
 
 ## Lisans
 
