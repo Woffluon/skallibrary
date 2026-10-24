@@ -2,19 +2,19 @@ from django.contrib import admin
 from library.models import Book
 
 
-@admin.action(description="Seçili kitapların ödünç taleplerini onayla")
+@admin.action(description="Ödünç talebini onayla")
 def approve_borrow(modeladmin, request, queryset):
     count = queryset.filter(status='pending').update(status='approved')
     modeladmin.message_user(request, f"{count} adet ödünç talebi onaylandı.")
 
 
-@admin.action(description="Seçili kitapların ödünç taleplerini reddet")
+@admin.action(description="Ödünç talebini reddet")
 def deny_borrow(modeladmin, request, queryset):
     count = queryset.filter(status='pending').update(status='denied', borrowed_by=None)
     modeladmin.message_user(request, f"{count} adet ödünç talebi reddedildi.")
 
 
-@admin.action(description="Seçili kitapların iadelerini onayla")
+@admin.action(description="İadeyi onayla")
 def confirm_return(modeladmin, request, queryset):
     count = queryset.filter(status='return_pending').update(status='returned', borrowed_by=None)
     modeladmin.message_user(request, f"{count} adet kitabın iadesi onaylandı.")
