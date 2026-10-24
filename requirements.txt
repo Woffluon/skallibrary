@@ -1,0 +1,4 @@
+Django>=6.1,<7.0
+Pillow>=10.0.0
+django-unfold>=0.110.0
+whitenoise>=6.12.0
