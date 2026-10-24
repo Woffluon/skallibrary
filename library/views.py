@@ -54,7 +54,3 @@ def return_book(req, book_id):
 
     messages.success(req, f"'{book.name}' için iade talebiniz iletildi. Yönetici onayı bekleniyor.")
     return redirect('book_list')
-
-
-def landing(req):
-    return render(req, "library/landing.html")

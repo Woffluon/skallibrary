@@ -1,18 +1,15 @@
 {% extends "library/base.html" %}
 
-{% block title %}Kitap Kataloğu | SKAL Kütüphanesi{% endblock %}
+{% block title %}Kitaplar | SKAL Kütüphanesi{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">Kitap Kataloğu</h1>
-    <p class="page-subtitle">Kütüphanemizde kayıtlı tüm kitaplar ve anlık ödünç durumları.</p>
+    <h1 class="page-title">Kitaplar</h1>
 
     {% if not user.is_authenticated %}
-        <div class="notice-banner">
-            <span>Kitap ödünç almak veya iade etmek için sisteme giriş yapmalısınız.</span>
-            <div>
-                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Giriş Yap</a>
-            </div>
+        <div class="notice-bar">
+            <span>Ödünç almak veya iade etmek için giriş yapmalısınız.</span>
+            <a href="{% url 'login' %}" class="btn btn-outline btn-sm">Giriş Yap</a>
         </div>
     {% endif %}
 </div>
@@ -20,7 +17,7 @@
 <div class="catalog-controls">
     <div class="search-wrapper">
         <span class="search-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -29,17 +26,17 @@
             type="text"
             id="bookSearch"
             class="search-input"
-            placeholder="Kitap adı veya yazar ara... (/)"
+            placeholder="Kitap veya yazar ara..."
             autocomplete="off"
             aria-label="Kitap veya yazar ara"
         >
     </div>
-    <span class="books-count" id="booksCount">Toplam {{ books|length }} kitap</span>
+    <span class="books-count" id="booksCount">{{ books|length }} kitap</span>
 </div>
 
 <div class="books-grid" id="booksGrid">
     {% for book in books %}
-        <div class="book-card" data-name="{{ book.name }}" data-author="{{ book.author }}">
+        <article class="book-card" data-name="{{ book.name }}" data-author="{{ book.author }}">
             <div class="book-cover-container">
                 {% if book.cover %}
                     <img src="{{ book.cover.url }}" alt="{{ book.name }}" class="book-cover">
@@ -87,7 +84,7 @@
 
             <div class="book-card-footer">
                 {% if not user.is_authenticated %}
-                    <a href="{% url 'login' %}" class="btn btn-outline btn-block">Ödünç Almak İçin Giriş Yap</a>
+                    <a href="{% url 'login' %}" class="btn btn-outline btn-block">Giriş Yap</a>
                 {% else %}
                     {% if book.borrowed_by == user %}
                         {% if book.status == 'approved' %}
@@ -117,17 +114,15 @@
                     {% endif %}
                 {% endif %}
             </div>
-        </div>
+        </article>
     {% empty %}
         <div class="empty-state">
-            <h3 class="empty-state-title">Henüz kitap bulunmuyor</h3>
-            <p class="empty-state-desc">Kütüphane arşivine henüz kitap eklenmemiştir.</p>
+            <p>Kayıtlı kitap bulunmuyor.</p>
         </div>
     {% endfor %}
 
     <div id="noSearchResults" class="empty-state" style="display: none;">
-        <h3 class="empty-state-title">Sonuç Bulunamadı</h3>
-        <p class="empty-state-desc">Arama kriterlerinize uygun kitap bulunamadı.</p>
+        <p>Sonuç bulunamadı.</p>
     </div>
 </div>
 {% endblock %}

@@ -12,18 +12,7 @@
 <body>
     <header class="site-header">
         <div class="container header-inner">
-            <a class="brand" href="{% url 'landing' %}">
-                <span class="brand-badge-icon" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                </span>
-                <span class="brand-text">
-                    <strong>SKAL Kütüphanesi</strong>
-                    <small>Sezai Karakoç Anadolu Lisesi</small>
-                </span>
-            </a>
+            <a class="brand" href="{% url 'book_list' %}">SKAL Kütüphanesi</a>
 
             <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Menüyü aç veya kapat">
                 <span></span>
@@ -33,11 +22,10 @@
 
             <nav class="primary-nav" aria-label="Ana menü">
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="{% url 'landing' %}" class="nav-link">Ana Sayfa</a></li>
                     <li><a href="{% url 'book_list' %}" class="nav-link">Kitaplar</a></li>
                     {% if user.is_authenticated %}
                         {% if user.is_staff %}
-                            <li><a href="{% url 'admin:index' %}" class="nav-link nav-link-admin">Yönetim Paneli</a></li>
+                            <li><a href="{% url 'admin:index' %}" class="nav-link nav-link-admin">Yönetim</a></li>
                         {% endif %}
                         <li>
                             <span class="user-badge" title="Giriş yapan kullanıcı">
@@ -76,14 +64,14 @@
 
     <footer class="site-footer">
         <div class="container footer-inner">
-            <div class="footer-info">
-                <p class="footer-title">Sezai Karakoç Anadolu Lisesi</p>
-                <p class="footer-sub">Öğrenci Kütüphanesi</p>
-            </div>
+            <p class="footer-title">SKAL Kütüphanesi</p>
             <div class="footer-links">
-                <a href="{% url 'landing' %}">Ana Sayfa</a>
                 <a href="{% url 'book_list' %}">Kitaplar</a>
-                {% if not user.is_authenticated %}
+                {% if user.is_authenticated %}
+                    {% if user.is_staff %}
+                        <a href="{% url 'admin:index' %}">Yönetim</a>
+                    {% endif %}
+                {% else %}
                     <a href="{% url 'login' %}">Giriş Yap</a>
                 {% endif %}
             </div>
