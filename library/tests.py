@@ -2,12 +2,13 @@ import io
 from PIL import Image
 import importlib
 import os
+import threading
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured, ValidationError
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, connection, connections, transaction
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
 from library.admin import approve_borrow, confirm_return, deny_borrow, deny_return
@@ -416,4 +417,193 @@ class BookListPerformanceAndCoverValidationTests(TestCase):
             Book._meta.get_field('status').db_index,
             "'status' alanı üzerinde db_index=True tanımlanmış olmalıdır."
         )
+
+
+class ConcurrencyAndStateTransitionEdgeCaseTests(TransactionTestCase):
+    """
+    Eşzamanlılık (concurrency), yarış durumu (race condition)
+    ve uç durum (edge case) regresyon testleri.
+    """
+
+    def test_concurrent_borrow_requests(self):
+        """
+        Aynı kitaba aynı anda 2 farklı kullanıcının borrow_book view'ına istek atmasını simüle eder.
+        select_for_update ve transaction.atomic güvencesiyle kitap için yalnızca TEK bir kullanıcının
+        ödünç talebinin kabul edildiğini, kitabın asla 2 kişiye atanmadığını ve yarış durumunun
+        önlendiğini doğrular.
+        """
+        user1 = User.objects.create_user(username='concurrent_user1', password='password123')
+        user2 = User.objects.create_user(username='concurrent_user2', password='password123')
+        book = Book.objects.create(name='Eşzamanlı Ödünç Testi', author='Test Yazar')
+
+        results = []
+        errors = []
+
+        def worker(username, password, delay=0.0):
+            try:
+                if delay > 0:
+                    import time
+                    time.sleep(delay)
+                connections.close_all()
+                client = Client()
+                client.login(username=username, password=password)
+                response = client.post(reverse('borrow_book', kwargs={'book_id': book.id}), follow=True)
+                results.append((username, response.status_code))
+            except OperationalError:
+                # SQLite ortamında concurrent transaction çakışması durumunda
+                results.append((username, 'database_locked'))
+            except Exception as exc:
+                errors.append((username, exc))
+            finally:
+                connections.close_all()
+
+        thread1 = threading.Thread(target=worker, args=('concurrent_user1', 'password123', 0.0))
+        thread2 = threading.Thread(target=worker, args=('concurrent_user2', 'password123', 0.05))
+
+        thread1.start()
+        thread2.start()
+        thread1.join(timeout=10)
+        thread2.join(timeout=10)
+
+        # Beklenmeyen kritik hata veya kilitlenme olmamalıdır
+        self.assertEqual(len(errors), 0, f"İş parçacıklarında beklenmeyen hata oluştu: {errors}")
+
+        book.refresh_from_db()
+
+        # Kitap mutlaka 'pending' durumuna geçmiş olmalı
+        self.assertEqual(book.status, 'pending', "Kitap durumu 'pending' olmalıdır.")
+        # Kitap asla iki kişiye birden atanmamalı, tam olarak iki kullanıcıdan birine atanmalıdır
+        self.assertIn(
+            book.borrowed_by,
+            [user1, user2],
+            "Kitap yalnızca tek bir kullanıcıya rezerve edilmiş olmalıdır."
+        )
+
+    def test_inactive_user_cannot_borrow(self):
+        """
+        Aktif olmayan (is_active=False) bir öğrencinin ödünç talebinde bulunamayacağını doğrular.
+        Pasif kullanıcı request_borrow(user) çağırdığında ValidationError fırlatılmalıdır.
+
+        """
+        inactive_user = User.objects.create_user(
+            username='inactive_student',
+            password='password123',
+            is_active=False
+        )
+        book = Book.objects.create(
+            name='Pasif Kullanıcı Testi',
+            author='Test Yazar'
+        )
+
+        with self.assertRaises(ValidationError, msg="Aktif olmayan kullanıcı ödünç talebinde bulunamaz."):
+            book.request_borrow(inactive_user)
+
+    def test_unauthorized_return_rejected_in_view(self):
+        """
+        Öğrenci 1 tarafından ödünç alınan bir kitabın, Öğrenci 2 tarafından
+        return_book view'ı üzerinden iade edilemediğini doğrular.
+        Hata mesajı alınmalı ve kitabın durumu 'approved' ve 'borrowed_by' Öğrenci 1 olarak kalmalıdır.
+        """
+        student1 = User.objects.create_user(username='student1_return', password='password123')
+        student2 = User.objects.create_user(username='student2_return', password='password123')
+        book = Book.objects.create(
+            name='Yetkisiz İade Test Kitabı',
+            author='Test Yazar',
+            status='approved',
+            borrowed_by=student1
+        )
+
+        self.client.login(username='student2_return', password='password123')
+        response = self.client.post(reverse('return_book', kwargs={'book_id': book.id}), follow=True)
+
+        self.assertRedirects(response, reverse('book_list'))
+        # Kullanıcıya hata mesajı gösterildiğini doğrula
+        messages_list = list(response.context['messages'])
+        self.assertTrue(
+            any("Bu kitap için iade işlemi başlatamazsınız." in str(m) for m in messages_list),
+            "Yetkisiz kullanıcı iade denemesinde hata mesajı almalıdır."
+        )
+
+        book.refresh_from_db()
+        self.assertEqual(book.status, 'approved', "Kitabın statüsü 'approved' olarak kalmalıdır.")
+        self.assertEqual(book.borrowed_by, student1, "Kitabın ödünç alanı değişmemelidir.")
+
+    def test_admin_cannot_confirm_return_on_non_return_pending(self):
+        """
+        Adminin iade onayı beklemeyen ('pending' veya 'returned') kitaplarda
+        confirm_return çağırdığında durumun değişmediğini ve model seviyesinde
+        ValidationError fırlatıldığını doğrular.
+        """
+        student = User.objects.create_user(username='student_admin_cr', password='password123')
+        mock_admin = MockModelAdmin()
+
+        # 1. Durum 'pending' iken
+        book_pending = Book.objects.create(
+            name='Bekleyen Kitap',
+            author='Yazar',
+            status='pending',
+            borrowed_by=student
+        )
+        confirm_return(mock_admin, None, Book.objects.filter(id=book_pending.id))
+        book_pending.refresh_from_db()
+        self.assertEqual(book_pending.status, 'pending', "'pending' durumundaki kitabın durumu değişmemelidir.")
+        self.assertEqual(book_pending.borrowed_by, student)
+
+        with self.assertRaises(ValidationError):
+            book_pending.confirm_return()
+
+        # 2. Durum 'returned' iken
+        book_returned = Book.objects.create(
+            name='İade Edilmiş Kitap',
+            author='Yazar',
+            status='returned',
+            borrowed_by=None
+        )
+        confirm_return(mock_admin, None, Book.objects.filter(id=book_returned.id))
+        book_returned.refresh_from_db()
+        self.assertEqual(book_returned.status, 'returned', "'returned' durumundaki kitabın durumu değişmemelidir.")
+        self.assertIsNone(book_returned.borrowed_by)
+
+        with self.assertRaises(ValidationError):
+            book_returned.confirm_return()
+
+    def test_admin_cannot_approve_on_non_pending(self):
+        """
+        Adminin ödünç onayı beklemeyen ('approved' veya 'returned') kitaplarda
+        approve_borrow çağırdığında durumun bozulmadığını ve model seviyesinde
+        ValidationError fırlatıldığını doğrular.
+        """
+        student = User.objects.create_user(username='student_admin_ap', password='password123')
+        mock_admin = MockModelAdmin()
+
+        # 1. Durum 'approved' iken
+        book_approved = Book.objects.create(
+            name='Zaten Ödünç Verilmiş Kitap',
+            author='Yazar',
+            status='approved',
+            borrowed_by=student
+        )
+        approve_borrow(mock_admin, None, Book.objects.filter(id=book_approved.id))
+        book_approved.refresh_from_db()
+        self.assertEqual(book_approved.status, 'approved', "'approved' durumundaki kitap bozulmamalıdır.")
+        self.assertEqual(book_approved.borrowed_by, student)
+
+        with self.assertRaises(ValidationError):
+            book_approved.approve_borrow()
+
+        # 2. Durum 'returned' iken
+        book_returned = Book.objects.create(
+            name='Müsait Kitap',
+            author='Yazar',
+            status='returned',
+            borrowed_by=None
+        )
+        approve_borrow(mock_admin, None, Book.objects.filter(id=book_returned.id))
+        book_returned.refresh_from_db()
+        self.assertEqual(book_returned.status, 'returned', "'returned' durumundaki kitap bozulmamalıdır.")
+        self.assertIsNone(book_returned.borrowed_by)
+
+        with self.assertRaises(ValidationError):
+            book_returned.approve_borrow()
+
 

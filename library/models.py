@@ -73,6 +73,8 @@ class Book(models.Model):
 
     def request_borrow(self, user):
         """Öğrencinin ödünç alma talebini kaydeder."""
+        if not getattr(user, 'is_active', True):
+            raise ValidationError("Aktif olmayan kullanıcı ödünç talebinde bulunamaz.")
         if self.status in ['pending', 'approved', 'return_pending'] or self.borrowed_by is not None:
             raise ValidationError("Bu kitap şu anda ödünç alınamaz.")
         self.status = 'pending'
