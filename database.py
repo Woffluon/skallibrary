@@ -65,12 +65,17 @@ def main():
         run("Neon migrate", ["manage.py", "migrate", "--noinput"], neon)
 
         if not a.skip_data:
-            out = subprocess.run(
-                [sys.executable, "manage.py", "shell", "-c",
-                 "from django.contrib.auth import get_user_model as g; print(g().objects.count())"],
-                env=neon, capture_output=True, text=True,
-            )
-            count = int(out.stdout.strip() or 0)
+            count = 0
+            try:
+                import psycopg
+                with psycopg.connect(direct) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT count(*) FROM auth_user;")
+                        row = cur.fetchone()
+                        count = row[0] if row else 0
+            except Exception:
+                pass
+
             if count > 0 and input(f"Neon'da zaten {count} kullanici var. Yine de yukle? (e/H) ") != "e":
                 sys.exit("Iptal edildi.")
             run("Neon loaddata", ["manage.py", "loaddata", str(DUMP)], neon)
