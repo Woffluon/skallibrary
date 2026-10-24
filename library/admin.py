@@ -1,8 +1,11 @@
+from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, User
 from django.db import transaction
+from django.db.models import QuerySet
+from django.http import HttpRequest
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
@@ -25,7 +28,8 @@ class GroupAdmin(BaseGroupAdmin, ModelAdmin):
 
 
 @admin.action(description="Ödünç talebini onayla")
-def approve_borrow(modeladmin, request, queryset):
+def approve_borrow(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili onay bekleyen kitaplar için ödünç alma taleplerini onaylar."""
     count = 0
     with transaction.atomic():
         for book in queryset.filter(status='pending'):
@@ -36,7 +40,8 @@ def approve_borrow(modeladmin, request, queryset):
 
 
 @admin.action(description="Ödünç talebini reddet")
-def deny_borrow(modeladmin, request, queryset):
+def deny_borrow(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili onay bekleyen kitaplar için ödünç alma taleplerini reddeder."""
     count = 0
     with transaction.atomic():
         for book in queryset.filter(status='pending'):
@@ -47,7 +52,8 @@ def deny_borrow(modeladmin, request, queryset):
 
 
 @admin.action(description="İadeyi onayla")
-def confirm_return(modeladmin, request, queryset):
+def confirm_return(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili iade onayı bekleyen kitapların iadelerini onaylar."""
     count = 0
     with transaction.atomic():
         for book in queryset.filter(status='return_pending'):
@@ -58,7 +64,8 @@ def confirm_return(modeladmin, request, queryset):
 
 
 @admin.action(description="İade talebini reddet")
-def deny_return(modeladmin, request, queryset):
+def deny_return(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili iade onayı bekleyen kitapların iade taleplerini reddeder."""
     count = 0
     with transaction.atomic():
         for book in queryset.filter(status='return_pending'):
