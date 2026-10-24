@@ -6,10 +6,15 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
-from library.admin import approve_borrow, confirm_return, deny_borrow
+from library.admin import approve_borrow, confirm_return, deny_borrow, deny_return
 from library.models import Book
 
 User = get_user_model()
+
+
+class MockModelAdmin:
+    def message_user(self, request, message):
+        pass
 
 
 class BorrowReturnFlowTests(TestCase):
@@ -57,10 +62,6 @@ class BorrowReturnFlowTests(TestCase):
         self.book.borrowed_by = self.student
         self.book.save()
 
-        class MockModelAdmin:
-            def message_user(self, request, message):
-                pass
-
         approve_borrow(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
         self.book.refresh_from_db()
         self.assertEqual(self.book.status, 'approved')
@@ -73,6 +74,41 @@ class BorrowReturnFlowTests(TestCase):
         self.assertEqual(self.book.status, 'denied')
         self.assertIsNone(self.book.borrowed_by)
         self.assertTrue(self.book.is_available)
+
+    def test_admin_deny_return_action_and_action_isolation(self):
+        # Setup book in return_pending state
+        self.book.status = 'return_pending'
+        self.book.borrowed_by = self.student
+        self.book.save()
+
+        # "Ödünç talebini reddet" on return_pending book changes nothing
+        deny_borrow(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.status, 'return_pending')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+        # "Ödünç talebini onayla" on return_pending book changes nothing
+        approve_borrow(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.status, 'return_pending')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+        # "İade talebini reddet" resets return_pending -> approved and keeps borrowed_by
+        deny_return(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.status, 'approved')
+        self.assertEqual(self.book.borrowed_by, self.student)
+
+        # "İade talebini reddet" or "İadeyi onayla" on pending book changes nothing
+        self.book.status = 'pending'
+        self.book.save()
+        deny_return(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.status, 'pending')
+
+        confirm_return(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.status, 'pending')
 
     def test_return_flow(self):
         self.book.status = 'approved'
@@ -93,10 +129,6 @@ class BorrowReturnFlowTests(TestCase):
         self.assertEqual(self.book.status, 'return_pending')
 
         # Admin confirms return -> returned
-        class MockModelAdmin:
-            def message_user(self, request, message):
-                pass
-
         confirm_return(MockModelAdmin(), None, Book.objects.filter(id=self.book.id))
         self.book.refresh_from_db()
         self.assertEqual(self.book.status, 'returned')

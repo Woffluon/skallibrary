@@ -20,11 +20,17 @@ def confirm_return(modeladmin, request, queryset):
     modeladmin.message_user(request, f"{count} adet kitabın iadesi onaylandı.")
 
 
+@admin.action(description="İade talebini reddet")
+def deny_return(modeladmin, request, queryset):
+    count = queryset.filter(status='return_pending').update(status='approved')
+    modeladmin.message_user(request, f"{count} adet kitabın iade talebi reddedildi.")
+
+
 class BookAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'status', 'borrowed_by', 'cover')
     list_filter = ('status',)
     search_fields = ('name', 'author')
-    actions = [approve_borrow, deny_borrow, confirm_return]
+    actions = [approve_borrow, deny_borrow, confirm_return, deny_return]
 
 
 admin.site.register(Book, BookAdmin)
