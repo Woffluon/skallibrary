@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SKAL Kütüphanesi{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'library/img/logo.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +13,10 @@
 <body>
     <header class="site-header">
         <div class="container header-inner">
-            <a class="brand" href="{% url 'book_list' %}">SKAL Kütüphanesi</a>
+            <a class="brand" href="{% url 'book_list' %}">
+                <img src="{% static 'library/img/logo.png' %}" alt="Logo" class="brand-logo">
+                <span class="brand-text">SKAL Kütüphanesi</span>
+            </a>
 
             <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navMenu" aria-label="Menüyü aç veya kapat">
                 <span></span>
@@ -64,7 +68,10 @@
 
     <footer class="site-footer">
         <div class="container footer-inner">
-            <p class="footer-title">SKAL Kütüphanesi</p>
+            <div class="footer-brand">
+                <img src="{% static 'library/img/logo.png' %}" alt="Logo" class="footer-logo">
+                <span class="footer-title">SKAL Kütüphanesi</span>
+            </div>
             <div class="footer-links">
                 <a href="{% url 'book_list' %}">Kitaplar</a>
                 {% if user.is_authenticated %}

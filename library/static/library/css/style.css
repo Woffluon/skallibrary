@@ -111,6 +111,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
     font-size: 1.05rem;
     font-weight: 600;
     color: var(--text);
@@ -120,6 +123,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .brand:hover {
     color: var(--accent);
+}
+
+.brand-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: var(--radius-full);
+    display: block;
 }
 
 /* Navigation */
@@ -596,6 +607,21 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+}
+
+.footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: var(--radius-full);
+    display: block;
+    opacity: 0.85;
 }
 
 .footer-title {
