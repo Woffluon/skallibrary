@@ -5,33 +5,40 @@ from django.db import models
 
 class Book(models.Model):
     STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('denied', 'Denied'),
-        ('return_pending', 'Return Pending'),
-        ('returned', 'Returned'),
+        ('pending', 'Onay bekliyor'),
+        ('approved', 'Ödünç verildi'),
+        ('denied', 'Reddedildi'),
+        ('return_pending', 'İade onayı bekliyor'),
+        ('returned', 'İade edildi'),
     )
 
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
+        verbose_name="Kimlik",
     )
-    name = models.CharField(max_length=255)
-    author = models.CharField(max_length=255)
-    cover = models.ImageField(upload_to='covers/', blank=True, null=True)
+    name = models.CharField(max_length=255, verbose_name="Kitap Adı")
+    author = models.CharField(max_length=255, verbose_name="Yazar")
+    cover = models.ImageField(upload_to='covers/', blank=True, null=True, verbose_name="Kapak Resmi")
     borrowed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="borrowed_books",
+        verbose_name="Ödünç Alan Öğrenci",
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='returned',
+        verbose_name="Durum",
     )
+
+    class Meta:
+        verbose_name = "Kitap"
+        verbose_name_plural = "Kitaplar"
 
     @property
     def borrowed(self):
