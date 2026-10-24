@@ -1,6 +1,10 @@
 from django.contrib import admin
 from library.models import Book
 
+admin.site.site_header = "SKAL Kütüphanesi Yönetim Paneli"
+admin.site.site_title = "SKAL Kütüphanesi Yönetimi"
+admin.site.index_title = "Kütüphane Yönetim Paneli"
+
 
 @admin.action(description="Ödünç talebini onayla")
 def approve_borrow(modeladmin, request, queryset):
