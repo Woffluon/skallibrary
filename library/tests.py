@@ -1,7 +1,6 @@
 import io
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -28,7 +27,7 @@ class BorrowReturnFlowTests(TestCase):
         response = self.client.get('/accounts/signup/')
         self.assertEqual(response.status_code, 404)
 
-    def test_student_borrow_request_pending_and_email_sent(self):
+    def test_student_borrow_request_sets_pending(self):
         self.client.login(username='student1', password='password123')
         response = self.client.post(reverse('borrow_book', kwargs={'book_id': self.book.id}))
         self.assertRedirects(response, reverse('book_list'))
@@ -36,10 +35,6 @@ class BorrowReturnFlowTests(TestCase):
         self.book.refresh_from_db()
         self.assertEqual(self.book.status, 'pending')
         self.assertEqual(self.book.borrowed_by, self.student)
-
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn('Nutuk', mail.outbox[0].subject)
-        self.assertIn('admin@example.com', mail.outbox[0].to)
 
     def test_cannot_borrow_if_already_pending_or_approved(self):
         self.book.status = 'pending'

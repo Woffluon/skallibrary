@@ -1,7 +1,5 @@
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -28,14 +26,6 @@ def borrow_book(req, book_id):
     book.borrowed_by = req.user
     book.save()
 
-    admin_email = getattr(settings, 'ADMIN_EMAIL', 'admin@example.com')
-    send_mail(
-        subject=f"Yeni Ödünç Talebi: {book.name}",
-        message=f"{req.user.username} adlı öğrenci '{book.name}' ({book.author}) kitabı için ödünç alma talebinde bulundu.",
-        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
-        recipient_list=[admin_email],
-        fail_silently=True,
-    )
     messages.success(req, f"'{book.name}' için ödünç talebiniz alındı. Yönetici onayı bekleniyor.")
     return redirect('book_list')
 

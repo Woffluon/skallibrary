@@ -9,9 +9,6 @@ stateDiagram-v2
     [*] --> Müsait: Kitap oluşturuldu (returned)
 
     Müsait --> Onay_Bekliyor: Öğrenci ödünç talebi (pending)
-    note right of Onay_Bekliyor
-        Yöneticiye e-posta bildirimi gider
-    end note
 
     Onay_Bekliyor --> Ödünç_Verildi: Admin onaylar (approved)
     Onay_Bekliyor --> Müsait: Admin reddeder (denied)

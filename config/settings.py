@@ -168,27 +168,6 @@ STORAGES = {
     },
 }
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-ADMIN_EMAIL = os.environ.get('DJANGO_ADMIN_EMAIL', 'admin@example.com')
-DEFAULT_FROM_EMAIL = os.environ.get('DJANGO_DEFAULT_FROM_EMAIL', 'noreply@example.com')
-
-EMAIL_BACKEND_CHOICE = os.environ.get(
-    'DJANGO_EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
-)
-
-MAILERS = {
-    'default': {
-        'BACKEND': EMAIL_BACKEND_CHOICE,
-        'HOST': os.environ.get('DJANGO_EMAIL_HOST', 'localhost'),
-        'PORT': int(os.environ.get('DJANGO_EMAIL_PORT', 587)),
-        'USE_TLS': os.environ.get('DJANGO_EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes'),
-        'USERNAME': os.environ.get('DJANGO_EMAIL_HOST_USER', ''),
-        'PASSWORD': os.environ.get('DJANGO_EMAIL_HOST_PASSWORD', ''),
-    },
-}
-
 # Unfold Theme Settings
 UNFOLD = {
     "SITE_TITLE": "SKAL Kütüphanesi Yönetimi",
