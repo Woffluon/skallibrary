@@ -1,8 +1,7 @@
-from django.contrib.auth import authenticate,login
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.http import require_POST
-from django.contrib.auth.forms import UserCreationForm
 
 from library.models import Book
 
@@ -33,26 +32,6 @@ def return_book(req, book_id):
 
     return redirect('book_list')
 
-
-def signup(req):
-    if req.user.is_authenticated:
-        return redirect('book_list')
-
-    if req.method == 'POST':
-        form = UserCreationForm(req.POST)
-
-        if form.is_valid():
-            user = form.save()
-            login(req, user)
-            return redirect('book_list')
-    else:
-        form = UserCreationForm()
-
-    return render(
-        req,
-        "library/signup.html",
-        {"form":form}
-    )
 
 def landing(req):
     return render(
