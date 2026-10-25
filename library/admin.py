@@ -1,7 +1,11 @@
+from typing import Any
 from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group, User
+from django.db import transaction
+from django.db.models import QuerySet
+from django.http import HttpRequest
 from unfold.admin import ModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
@@ -24,26 +28,50 @@ class GroupAdmin(BaseGroupAdmin, ModelAdmin):
 
 
 @admin.action(description="Ödünç talebini onayla")
-def approve_borrow(modeladmin, request, queryset):
-    count = queryset.filter(status='pending').update(status='approved')
+def approve_borrow(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili onay bekleyen kitaplar için ödünç alma taleplerini onaylar."""
+    count = 0
+    with transaction.atomic():
+        for book in queryset.filter(status='pending'):
+            book.approve_borrow()
+            book.save()
+            count += 1
     modeladmin.message_user(request, f"{count} adet ödünç talebi onaylandı.")
 
 
 @admin.action(description="Ödünç talebini reddet")
-def deny_borrow(modeladmin, request, queryset):
-    count = queryset.filter(status='pending').update(status='denied', borrowed_by=None)
+def deny_borrow(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili onay bekleyen kitaplar için ödünç alma taleplerini reddeder."""
+    count = 0
+    with transaction.atomic():
+        for book in queryset.filter(status='pending'):
+            book.deny_borrow()
+            book.save()
+            count += 1
     modeladmin.message_user(request, f"{count} adet ödünç talebi reddedildi.")
 
 
 @admin.action(description="İadeyi onayla")
-def confirm_return(modeladmin, request, queryset):
-    count = queryset.filter(status='return_pending').update(status='returned', borrowed_by=None)
+def confirm_return(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili iade onayı bekleyen kitapların iadelerini onaylar."""
+    count = 0
+    with transaction.atomic():
+        for book in queryset.filter(status='return_pending'):
+            book.confirm_return()
+            book.save()
+            count += 1
     modeladmin.message_user(request, f"{count} adet kitabın iadesi onaylandı.")
 
 
 @admin.action(description="İade talebini reddet")
-def deny_return(modeladmin, request, queryset):
-    count = queryset.filter(status='return_pending').update(status='approved')
+def deny_return(modeladmin: Any, request: HttpRequest, queryset: QuerySet) -> None:
+    """Seçili iade onayı bekleyen kitapların iade taleplerini reddeder."""
+    count = 0
+    with transaction.atomic():
+        for book in queryset.filter(status='return_pending'):
+            book.deny_return()
+            book.save()
+            count += 1
     modeladmin.message_user(request, f"{count} adet kitabın iade talebi reddedildi.")
 
 
