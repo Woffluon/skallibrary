@@ -1,0 +1,270 @@
+/*!
+ * Driver.js v1.x Base Stylesheet
+ * Lightweight, accessible tour styles.
+ */
+
+:root {
+  --driver-bg: #ffffff;
+  --driver-text: #141414;
+  --driver-muted: #6b6b66;
+  --driver-border: rgba(0, 0, 0, 0.1);
+  --driver-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --driver-primary: #1f4d3a;
+  --driver-primary-hover: #163a2b;
+  --driver-primary-text: #ffffff;
+  --driver-radius: 6px;
+  --driver-radius-sm: 4px;
+}
+
+/* Dark mode support if container is in dark context */
+.dark, [data-theme="dark"] {
+  --driver-bg: #1e293b;
+  --driver-text: #f8fafc;
+  --driver-muted: #94a3b8;
+  --driver-border: rgba(255, 255, 255, 0.12);
+  --driver-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+/* Spotlight & Stage */
+.driver-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100000;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.driver-overlay-path {
+  transition: d 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.driver-stage {
+  position: fixed;
+  z-index: 100001;
+  pointer-events: none;
+  border-radius: var(--driver-radius);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 4px var(--driver-primary);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Popover Dialog */
+.driver-popover {
+  position: fixed;
+  z-index: 100002;
+  width: 350px;
+  max-width: calc(100vw - 32px);
+  background-color: var(--driver-bg);
+  color: var(--driver-text);
+  border: 1px solid var(--driver-border);
+  border-radius: var(--driver-radius);
+  box-shadow: var(--driver-shadow);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.driver-popover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.driver-popover-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  color: var(--driver-text);
+}
+
+.driver-popover-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--driver-muted);
+  padding: 4px;
+  margin: -4px -4px 0 0;
+  border-radius: var(--driver-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.driver-popover-close-btn:hover {
+  color: var(--driver-text);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .driver-popover-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.driver-popover-close-btn:focus-visible {
+  outline: 2px solid var(--driver-primary);
+  outline-offset: 2px;
+}
+
+/* Body / Description */
+.driver-popover-description {
+  font-size: 13.5px;
+  color: #4a4a46;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.dark .driver-popover-description {
+  color: #cbd5e1;
+}
+
+/* Footer & Controls */
+.driver-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+  gap: 12px;
+}
+
+.driver-popover-progress-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--driver-muted);
+  user-select: none;
+}
+
+.driver-popover-navigation-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Buttons */
+.driver-popover-btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  min-height: 34px;
+  border-radius: var(--driver-radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.3;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+
+.driver-popover-btn:focus-visible {
+  outline: 2px solid var(--driver-primary);
+  outline-offset: 2px;
+}
+
+.driver-popover-next-btn {
+  background-color: var(--driver-primary);
+  color: var(--driver-primary-text);
+  border: 1px solid var(--driver-primary);
+}
+
+.driver-popover-next-btn:hover {
+  background-color: var(--driver-primary-hover);
+  border-color: var(--driver-primary-hover);
+}
+
+.driver-popover-prev-btn {
+  background-color: #ffffff;
+  color: #3d3d39;
+  border: 1px solid #d5d2cb;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: #f5f4f0;
+  border-color: #b8b5ad;
+  color: #141414;
+}
+
+.dark .driver-popover-prev-btn {
+  background-color: #334155;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+
+.dark .driver-popover-prev-btn:hover {
+  background-color: #475569;
+}
+
+/* Popover Arrow */
+.driver-popover-arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  background-color: var(--driver-bg);
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  pointer-events: none;
+}
+
+.driver-popover[data-side="bottom"] .driver-popover-arrow {
+  border-top-color: var(--driver-border);
+  border-left-color: var(--driver-border);
+}
+
+.driver-popover[data-side="top"] .driver-popover-arrow {
+  border-bottom-color: var(--driver-border);
+  border-right-color: var(--driver-border);
+}
+
+.driver-popover[data-side="left"] .driver-popover-arrow {
+  border-top-color: var(--driver-border);
+  border-right-color: var(--driver-border);
+}
+
+.driver-popover[data-side="right"] .driver-popover-arrow {
+  border-bottom-color: var(--driver-border);
+  border-left-color: var(--driver-border);
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .driver-overlay-path,
+  .driver-stage,
+  .driver-popover,
+  .driver-popover-btn,
+  .driver-popover-close-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .driver-popover {
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+
+  .driver-popover-btn {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+
+  .driver-popover-close-btn {
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
