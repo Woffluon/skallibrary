@@ -1,0 +1,185 @@
+/*!
+ * SKAL Kütüphanesi - Yönetim Paneli Özel Stilleri & Rehber Teması
+ * Kurumsal Renk: #1f4d3a (Koyu Orman Yeşili)
+ * WCAG 2.2 AA Uyumlu Kontrast ve Odak Göstergeleri
+ */
+
+:root {
+  --skal-primary: #1f4d3a;
+  --skal-primary-hover: #163a2b;
+  --skal-primary-light: #f1f6f3;
+  --skal-primary-border: #c8dcd3;
+  --skal-primary-focus: rgba(31, 77, 58, 0.25);
+
+  --skal-text: #141414;
+  --skal-text-muted: #6b6b66;
+  --skal-line: #e7e5e0;
+  --skal-bg: #fafaf8;
+  --skal-surface: #ffffff;
+
+  --skal-radius: 6px;
+  --skal-radius-sm: 4px;
+}
+
+/* ==========================================================================
+   1. İnteraktif Kullanım Rehberi (Tour) Özel Stilleri
+   ========================================================================== */
+
+/* Özel Popover Konteyneri */
+.skal-tour-popover {
+  border-color: var(--skal-primary-border);
+  box-shadow: 0 10px 25px -5px rgba(31, 77, 58, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+}
+
+.skal-tour-popover .driver-popover-title {
+  color: var(--skal-text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.skal-tour-popover .driver-popover-description {
+  color: #374151;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.skal-tour-popover .driver-popover-progress-text {
+  color: var(--skal-text-muted);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* İleri ve Tamamla Butonları */
+.skal-tour-popover .driver-popover-next-btn {
+  background-color: var(--skal-primary);
+  border-color: var(--skal-primary);
+  color: #ffffff;
+}
+
+.skal-tour-popover .driver-popover-next-btn:hover {
+  background-color: var(--skal-primary-hover);
+  border-color: var(--skal-primary-hover);
+}
+
+/* Geri Butonu */
+.skal-tour-popover .driver-popover-prev-btn {
+  background-color: #ffffff;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.skal-tour-popover .driver-popover-prev-btn:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+/* Vurgulama Çerçevesi (Stage) */
+.skal-tour-stage {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--skal-primary) !important;
+  border-radius: var(--skal-radius) !important;
+}
+
+/* WCAG 2.2 AA Odak Göstergesi (Focus Ring) */
+.skal-tour-popover button:focus-visible,
+.skal-tour-popover [tabindex]:focus-visible {
+  outline: 2px solid var(--skal-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ==========================================================================
+   2. "Rehberi Başlat" Butonu Stilleri (Admin Header / User Links)
+   ========================================================================== */
+
+#skal-start-tour-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--skal-primary);
+  background-color: var(--skal-primary-light);
+  border: 1px solid var(--skal-primary-border);
+  border-radius: var(--skal-radius-sm);
+  padding: 5px 12px;
+  height: 32px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#skal-start-tour-btn:hover {
+  background-color: #e2ede7;
+  border-color: var(--skal-primary);
+  color: var(--skal-primary-hover);
+}
+
+#skal-start-tour-btn:focus-visible {
+  outline: 2px solid var(--skal-primary);
+  outline-offset: 2px;
+}
+
+#skal-start-tour-btn svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+/* Header bulunamayan durumlarda yüzen (floating) buton görünümü */
+#skal-start-tour-btn.skal-tour-floating {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  height: 38px;
+  padding: 8px 16px;
+  background-color: var(--skal-primary);
+  color: #ffffff;
+  border-color: var(--skal-primary-hover);
+  border-radius: var(--skal-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#skal-start-tour-btn.skal-tour-floating:hover {
+  background-color: var(--skal-primary-hover);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* ==========================================================================
+   3. Açık Tema Zorunluluğu (Light Theme Only)
+   ========================================================================== */
+
+html,
+:root {
+  color-scheme: light !important;
+}
+
+/* Sistemsel veya tarayıcı düzeyinde karanlık mod açık olsa dahi açık temayı koru */
+.dark,
+html.dark {
+  color-scheme: light !important;
+}
+
+.skal-tour-popover {
+  background-color: #ffffff !important;
+  color: var(--skal-text) !important;
+}
+
+/* ==========================================================================
+   4. Erişilebilirlik: Tercih Edilen Azaltılmış Hareket (Reduced Motion)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  #skal-start-tour-btn,
+  .skal-tour-popover,
+  .skal-tour-stage {
+    transition: none !important;
+    animation: none !important;
+  }
+}
