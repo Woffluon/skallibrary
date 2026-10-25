@@ -607,3 +607,100 @@ class ConcurrencyAndStateTransitionEdgeCaseTests(TransactionTestCase):
             book_returned.approve_borrow()
 
 
+
+
+class AdminUIDashboardTests(TestCase):
+    """Admin arayüzü, Unfold yapılandırması ve Gösterge Paneli testleri."""
+
+    def setUp(self):
+        self.student = User.objects.create_user(username='badge_student', password='password123')
+
+    def test_timezone_setting(self):
+        """Zaman diliminin Europe/Istanbul olduğunu doğrular."""
+        from django.conf import settings
+        self.assertEqual(settings.TIME_ZONE, 'Europe/Istanbul')
+
+    def test_unfold_settings_customization(self):
+        """UNFOLD ayarlarının tema kilidi (light), marka rengi, alt başlık, dashboard callback ve static listelerini içerdiğini doğrular."""
+        from django.conf import settings
+        unfold_conf = settings.UNFOLD
+        self.assertEqual(unfold_conf.get('THEME'), 'light')
+        self.assertEqual(unfold_conf.get('SITE_SUBHEADER'), 'Yönetim ve Takip Paneli')
+        self.assertEqual(unfold_conf.get('DASHBOARD_CALLBACK'), 'library.dashboard.dashboard_callback')
+        self.assertIn('library/css/driver.css', unfold_conf.get('STYLES', []))
+        self.assertIn('library/css/admin_custom.css', unfold_conf.get('STYLES', []))
+        self.assertIn('library/js/driver.js', unfold_conf.get('SCRIPTS', []))
+        self.assertIn('library/js/admin_tour.js', unfold_conf.get('SCRIPTS', []))
+        self.assertEqual(unfold_conf.get('COLORS', {}).get('primary', {}).get('600'), '31 77 58')
+
+    def test_dashboard_callback_and_kpi(self):
+        """dashboard_callback fonksiyonunun gerçek KPI metriklerini ve son hareketleri ürettiğini doğrular."""
+        from django.test import RequestFactory
+        from library.dashboard import dashboard_callback
+
+        Book.objects.create(name='Kitap 1', author='Yazar 1', status='returned', borrowed_by=None)
+        Book.objects.create(name='Kitap 2', author='Yazar 2', status='pending', borrowed_by=self.student)
+        Book.objects.create(name='Kitap 3', author='Yazar 3', status='approved', borrowed_by=self.student)
+        Book.objects.create(name='Kitap 4', author='Yazar 4', status='return_pending', borrowed_by=self.student)
+
+        req = RequestFactory().get('/admin/')
+        ctx = dashboard_callback(req, {})
+
+        self.assertIn('kpi_stats', ctx)
+        stats = ctx['kpi_stats']
+        self.assertEqual(stats['total_books'], 4)
+        self.assertEqual(stats['available_books'], 1)
+        self.assertEqual(stats['pending_borrows'], 1)
+        self.assertEqual(stats['pending_returns'], 1)
+        self.assertEqual(stats['approved_loans'], 1)
+
+        self.assertIn('recent_loans', ctx)
+        self.assertLessEqual(len(ctx['recent_loans']), 5)
+
+    def test_pending_books_badge_behavior(self):
+        """Bekleyen işlem olduğunda rozet sayısını, olmadığında None döndürdüğünü doğrular."""
+        from django.test import RequestFactory
+        from library.dashboard import pending_books_badge
+
+        req = RequestFactory().get('/admin/')
+
+        # Başlangıçta bekleyen talep yok
+        self.assertIsNone(pending_books_badge(req))
+
+        # 1 pending kitap ekle
+        Book.objects.create(name='Pending Kitap', author='Yazar', status='pending', borrowed_by=self.student)
+        self.assertEqual(pending_books_badge(req), '1')
+
+        # 1 return_pending kitap daha ekle
+        Book.objects.create(name='Return Pending Kitap', author='Yazar', status='return_pending', borrowed_by=self.student)
+        self.assertEqual(pending_books_badge(req), '2')
+
+    def test_book_admin_configuration_and_methods(self):
+        """BookAdmin sınıfının list_display, list_filter, rozet ve kapak metodlarını doğrular."""
+        from django.contrib.admin.sites import site
+        from library.admin import BookAdmin
+
+        book_admin = BookAdmin(Book, site)
+
+        self.assertEqual(
+            book_admin.list_display,
+            ('cover_thumbnail', 'name', 'author', 'status_badge', 'borrowed_by')
+        )
+        self.assertEqual(book_admin.list_filter, ('status',))
+        self.assertTrue(book_admin.list_filter_submit)
+        self.assertEqual(book_admin.search_fields, ('name', 'author'))
+        self.assertEqual(book_admin.list_per_page, 20)
+
+        book = Book.objects.create(
+            name='Rozet Test Kitap',
+            author='Yazar',
+            status='pending',
+            borrowed_by=self.student
+        )
+        status_key, status_label = book_admin.status_badge(book)
+        self.assertEqual(status_key, 'pending')
+        self.assertEqual(status_label, 'Onay Bekliyor')
+
+        # Kapak resmi olmayan kitap için placeholder kontrolü
+        thumb = book_admin.cover_thumbnail(book)
+        self.assertIn('-', str(thumb))
