@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+from django.templatetags.static import static
+from django.urls import reverse_lazy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -150,7 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'tr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Istanbul'
 
 USE_I18N = True
 
@@ -178,9 +180,77 @@ STORAGES = {
     },
 }
 
+
+class StaticAsset(str):
+    """Hem string hem de çağrılabilir (callable) davranarak statik dosyaları Unfold ve testlerle tam uyumlu çözer."""
+
+    def __call__(self, request=None):
+        return static(str(self))
+
+
 # Unfold Theme Settings
 UNFOLD = {
+    "THEME": "light",
     "SITE_TITLE": "SKAL Kütüphanesi Yönetimi",
     "SITE_HEADER": "SKAL Kütüphanesi",
+    "SITE_SUBHEADER": "Yönetim ve Takip Paneli",
     "SITE_URL": "/",
+    "DASHBOARD_CALLBACK": "library.dashboard.dashboard_callback",
+    "COLORS": {
+        "primary": {
+            "50": "241 246 243",
+            "100": "220 234 227",
+            "200": "184 213 200",
+            "300": "139 184 165",
+            "400": "89 149 126",
+            "500": "51 118 97",
+            "600": "31 77 58",
+            "700": "27 67 51",
+            "800": "24 55 43",
+            "900": "21 46 37",
+            "950": "10 27 21",
+        },
+    },
+    "STYLES": [
+        StaticAsset("library/css/driver.css"),
+        StaticAsset("library/css/admin_custom.css"),
+    ],
+    "SCRIPTS": [
+        StaticAsset("library/js/driver.js"),
+        StaticAsset("library/js/admin_tour.js"),
+    ],
+    "SIDEBAR": {
+        "show_search": False,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Kütüphane Yönetimi",
+                "separator": False,
+                "items": [
+                    {
+                        "title": "Gösterge Paneli",
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                    {
+                        "title": "Kitap Kataloğu",
+                        "icon": "menu_book",
+                        "link": reverse_lazy("admin:library_book_changelist"),
+                        "badge": "library.dashboard.pending_books_badge",
+                    },
+                ],
+            },
+            {
+                "title": "Kullanıcılar ve İzinler",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Öğrenci ve Yöneticiler",
+                        "icon": "people",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
 }
